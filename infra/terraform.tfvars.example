@@ -1,0 +1,4 @@
+# Copia a terraform.tfvars si quieres cambiar los defaults
+region            = "us-east-1"
+db_instance_class = "db.t3.micro"
+# allowed_cidr    = "201.141.0.10/32"   # vacío = se detecta tu IP pública
