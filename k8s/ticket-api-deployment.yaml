@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-api
+  namespace: concertpass
+  labels:
+    app: ticket-api
+spec:
+  replicas: 2   # escala horizontalmente: más réplicas = más capacidad para recibir y encolar
+  selector:
+    matchLabels:
+      app: ticket-api
+  template:
+    metadata:
+      labels:
+        app: ticket-api
+    spec:
+      containers:
+        - name: ticket-api
+          image: __ECR_REGISTRY__/ticket-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: concertpass-config   # AWS_REGION, SQS_QUEUE_URL, DB_SSLMODE...
+          env:                              # credenciales de RDS: Secrets Manager -> External Secrets -> Secret rds-credentials
+            - name: DB_HOST
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_PORT } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_NAME } }
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_USER } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_PASSWORD } }
+          readinessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }

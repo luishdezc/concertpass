@@ -1,0 +1,48 @@
+# 1 réplica según el enunciado. Para la prueba de concurrencia:
+#   kubectl -n concertpass scale deployment/ticket-worker --replicas=3
+# No tiene Service: no recibe tráfico HTTP, solo hace polling a SQS.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ticket-worker
+  namespace: concertpass
+  labels:
+    app: ticket-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ticket-worker
+  template:
+    metadata:
+      labels:
+        app: ticket-worker
+    spec:
+      terminationGracePeriodSeconds: 30   # tiempo para terminar el mensaje actual tras SIGTERM
+      containers:
+        - name: ticket-worker
+          image: __ECR_REGISTRY__/ticket-worker:latest
+          imagePullPolicy: Always
+          envFrom:
+            - configMapRef:
+                name: concertpass-config   # SQS_QUEUE_URL, DYNAMODB_TABLE, CHECKOUT_URL...
+          env:
+            - name: DB_HOST
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_PORT } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_NAME } }
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_USER } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: rds-credentials, key: DB_PASSWORD } }
+          livenessProbe:
+            # el worker toca /tmp/heartbeat en cada ciclo de polling; si deja de hacerlo, se reinicia
+            exec:
+              command: ["python", "-c", "import os,sys,time; sys.exit(time.time() - os.path.getmtime('/tmp/heartbeat') > 120)"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 96Mi }
+            limits: { cpu: 250m, memory: 192Mi }

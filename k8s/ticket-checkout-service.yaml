@@ -1,0 +1,13 @@
+# ClusterIP: solo accesible dentro del cluster; ticket-worker lo llama como http://ticket-checkout:8080
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticket-checkout
+  namespace: concertpass
+spec:
+  type: ClusterIP
+  selector:
+    app: ticket-checkout
+  ports:
+    - port: 8080
+      targetPort: 8080

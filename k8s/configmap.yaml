@@ -1,0 +1,12 @@
+# Configuración NO sensible. Los valores __ASÍ__ los reemplaza scripts/deploy_k8s.sh con outputs de Terraform.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: concertpass-config
+  namespace: concertpass
+data:
+  AWS_REGION: "__AWS_REGION__"
+  SQS_QUEUE_URL: "__SQS_QUEUE_URL__"
+  DYNAMODB_TABLE: "__DYNAMODB_TABLE__"
+  CHECKOUT_URL: "http://ticket-checkout:8080"   # DNS interno del Service de ticket-checkout
+  DB_SSLMODE: "require"

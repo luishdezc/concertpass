@@ -1,0 +1,14 @@
+# NodePort: expone ticket-api en el puerto 30080 de cada worker node (acceso externo)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ticket-api
+  namespace: concertpass
+spec:
+  type: NodePort
+  selector:
+    app: ticket-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

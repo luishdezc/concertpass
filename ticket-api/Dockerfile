@@ -4,15 +4,15 @@ WORKDIR /usr/local/app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
-# Dependencias (psycopg[binary] trae libpq incluida, no hace falta apt-get)
+# Dependencias (capa separada para aprovechar la caché)
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Código fuente
-COPY main.py ./
+COPY src/ ./
 EXPOSE 8080
 
-# Sin credenciales en la imagen: las DB_* se pasan con -e / --env-file en docker run
+# Sin credenciales en la imagen: toda la configuración llega por variables de ambiente
 
 # Usuario no-root por seguridad
 RUN useradd --no-create-home app

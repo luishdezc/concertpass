@@ -1,0 +1,23 @@
+[
+  {
+    "concert_id": "bad-bunny-gdl",
+    "name": "Bad Bunny Debi tirar más fotos",
+    "date": "2026-11-15",
+    "recinto": "Estadio Akron, GDL",
+    "capacity": { "floor": 100, "vip": 50, "general": 500 }
+  },
+  {
+    "concert_id": "jazz-trio-gdl",
+    "name": "Trío de Jazz en el Foro",
+    "date": "2026-11-20",
+    "recinto": "Foro Independencia, GDL",
+    "capacity": { "floor": 20, "vip": 10, "general": 50 }
+  },
+  {
+    "concert_id": "karol-g-gdl",
+    "name": "Karol G en Guadalajara",
+    "date": "2026-12-05",
+    "recinto": "Arena Guadalajara, GDL",
+    "capacity": { "floor": 10, "vip": 5, "general": 20 }
+  }
+]

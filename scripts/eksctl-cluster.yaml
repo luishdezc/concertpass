@@ -1,0 +1,31 @@
+# Equivale a:
+#   eksctl create cluster --name concertpass-cluster --region us-east-1 \
+#     --nodegroup-name workers --node-type t3.medium --nodes 2 --managed
+# pero usando LabRole, porque AWS Academy Learner Lab no deja a eksctl crear sus propios roles IAM.
+# __ACCOUNT_ID__, __CLUSTER__ y __REGION__ los reemplaza scripts/eks_up.sh.
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: __CLUSTER__
+  region: __REGION__
+
+iam:
+  serviceRoleARN: arn:aws:iam::__ACCOUNT_ID__:role/LabRole   # rol del control plane
+  withOIDC: false                                            # Learner Lab no permite crear el proveedor OIDC
+
+vpc:
+  nat:
+    gateway: Disable   # los nodos van en subredes públicas; el NAT solo gastaría créditos
+
+managedNodeGroups:
+  - name: workers
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 2
+    privateNetworking: false   # IP pública: así llegan a la RDS y se expone el NodePort
+    iam:
+      instanceRoleARN: arn:aws:iam::__ACCOUNT_ID__:role/LabRole  # rol de los nodos; los pods lo heredan vía IMDS
+    # No se pone disablePodIMDS: eksctl deja el hop limit de IMDS en 2 y los pods pueden
+    # obtener las credenciales de LabRole (SQS, DynamoDB, Secrets Manager).

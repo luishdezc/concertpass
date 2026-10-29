@@ -94,7 +94,45 @@ resource "aws_ecr_repository" "services" {
   force_delete         = true # permite terraform destroy aunque haya imágenes
 
   image_scanning_configuration {
-    scan_on_push = true
+    scan_on_push = false # el escaneo no es necesario para la práctica
+  }
+}
+
+# ---------------------------------------------------------------------------
+# SQS FIFO: ticket-api encola, ticket-worker consume
+# ---------------------------------------------------------------------------
+resource "aws_sqs_queue" "reservations" {
+  name                        = "${var.project}-reservations.fifo" # las FIFO deben terminar en .fifo
+  fifo_queue                  = true
+  content_based_deduplication = true
+  visibility_timeout_seconds  = var.sqs_visibility_timeout
+  message_retention_seconds   = 345600 # 4 días
+  receive_wait_time_seconds   = 10     # long polling por defecto
+
+  # Un mensaje que falla 5 veces se mueve a la DLQ para no bloquear su MessageGroup para siempre
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.reservations_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+
+resource "aws_sqs_queue" "reservations_dlq" {
+  name                      = "${var.project}-reservations-dlq.fifo" # la DLQ de una FIFO también es FIFO
+  fifo_queue                = true
+  message_retention_seconds = 1209600 # 14 días
+}
+
+# ---------------------------------------------------------------------------
+# DynamoDB: definición de los eventos (solo lectura en runtime). La precarga scripts/seed_dynamodb.sh
+# ---------------------------------------------------------------------------
+resource "aws_dynamodb_table" "events" {
+  name         = "${var.project}-events"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "concert_id"
+
+  attribute {
+    name = "concert_id"
+    type = "S"
   }
 }
 
@@ -109,7 +147,10 @@ resource "local_sensitive_file" "env" {
     DB_PORT=${aws_db_instance.postgres.port}
     DB_NAME=${var.db_name}
     DB_USER=${var.db_user}
-    DB_PASSWORD=${random_password.db.result}
+    DB_PASSWORD='${random_password.db.result}'
     DB_SSLMODE=require
+    AWS_REGION=${var.region}
+    SQS_QUEUE_URL=${aws_sqs_queue.reservations.url}
+    DYNAMODB_TABLE=${aws_dynamodb_table.events.name}
   EOT
 }

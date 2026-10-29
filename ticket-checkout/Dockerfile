@@ -9,8 +9,10 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Código fuente
-COPY main.py ./
+COPY src/ ./
 EXPOSE 8080
+
+# Sin credenciales en la imagen: toda la configuración llega por variables de ambiente
 
 # Usuario no-root por seguridad
 RUN useradd --no-create-home app

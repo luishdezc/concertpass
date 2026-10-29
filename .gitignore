@@ -7,3 +7,6 @@ infra/.terraform/
 infra/*.tfstate
 infra/*.tfstate.*
 infra/terraform.tfvars
+infra/eks.auto.tfvars.json
+k8s/.rendered/
+infra/.terraform.tfstate.lock.info
